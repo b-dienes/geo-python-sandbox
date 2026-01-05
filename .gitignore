@@ -19,3 +19,4 @@ data/outputs/
 *.dbf
 *.prj
 *.shx
+*.gpkg
