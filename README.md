@@ -20,16 +20,12 @@ A collection of geospatial Python experiments and utilities using:
 ```text
 geo-python-sandbox/
 ├── data/
-│   ├── inputs/
-│   └── outputs/
-├── geopandas/
-│   └── script_example.py
-├── pyproj/
-│   └── script_example.py
-├── rasterio/
-│   └── script_example.py
-├── utils/
-│   └── paths.py
+│   ├── inputs/       # Place input datasets here (e.g., GeoPackage files)
+│   └── outputs/      # Place outputs from scripts here (e.g., cleaned GeoDataFrames, exports)
+├── src/
+│   ├── geopandas_demo.py       # main GeoPandas practice script
+│   └── utils/
+│       └── paths.py            # helper functions for file paths
 ├── README.md
 └── .gitignore
 ```
