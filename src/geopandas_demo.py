@@ -120,20 +120,106 @@ def reproject_gdf(gdf: gpd.GeoDataFrame, target_crs: str) -> gpd.GeoDataFrame:
 
     return gdf
 
+def prepare_gdf(filename: str, target_crs: str) -> None:
+    """
+    Load, clean, and reproject a geospatial dataset.
+
+    Parameters
+    ----------
+    filename : str
+        Input geospatial file name.
+    target_crs : str
+        CRS to reproject to.
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        Processed GeoDataFrame.
+    """
+    path = load_input_path(filename)
+    gdf = load_gdf(path)
+    gdf = clean_gdf(gdf)
+    gdf = reproject_gdf(gdf, target_crs)
+    return gdf
+
+def log_park_summary(gdf: gpd.GeoDataFrame) -> None:
+    """
+    Log summary statistics and descriptive information for park data.
+
+    This function provides high-level insights into the park dataset,
+    including total counts, state-level filtering, and basic aggregation.
+    It is intended for exploratory analysis and reporting only and does
+    not modify or return the input GeoDataFrame.
+
+    Parameters
+    ----------
+    gdf : gpd.GeoDataFrame
+        GeoDataFrame containing National Park unit geometries and
+        associated attributes.
+
+    Returns
+    -------
+    None
+        This function returns no value and is used for logging and
+        exploratory inspection.
+    """
+
+    logger.info("Parks total: %s", len(gdf))
+    logger.info("Parks in CA: %s", len(gdf.loc[gdf['STATE']=='CA']))
+    logger.info("Park names in CA: %s", gdf.loc[gdf['STATE']=='CA', 'PARKNAME'])
+
+    grouped = gdf.dissolve(by='STATE', as_index=False)
+    logger.info("The are Parks in %s states", len(grouped['STATE']))
+
+    return
+
+def clip_parks_to_state(parks_gdf: gpd.GeoDataFrame, state_gdf: gpd.GeoDataFrame) -> None:
+    """
+    Perform spatial operations between park units and a state boundary.
+
+    This function identifies National Park units that intersect the
+    provided state boundary by spatially clipping park geometries to
+    the state extent. It is intended to demonstrate and validate spatial
+    filtering operations and may be extended for additional spatial
+    analyses.
+
+    Parameters
+    ----------
+    parks_gdf : gpd.GeoDataFrame
+        GeoDataFrame containing National Park unit geometries.
+    state_gdf : gpd.GeoDataFrame
+        GeoDataFrame containing a single state boundary geometry.
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        GeoDataFrame containing park geometries clipped to the state
+        boundary.
+    """
+
+    calpark = gpd.clip(parks_gdf, state_gdf)
+    logger.info("Clipped parks in CA: %s", calpark.loc[calpark['STATE']=='CA', 'PARKNAME'])
+
+    return calpark
+
 if __name__ == "__main__":
 
-    parks = "us_nps_units_parks.gpkg"
-    state = "california_state_boundary.gpkg"
     target_crs = 'EPSG:5070'
 
-    file_path = load_input_path(state)
-    gdf = load_gdf(file_path)
-    cleaned_gdf = clean_gdf(gdf)
-    reprojected_gdf = reproject_gdf(cleaned_gdf, target_crs)
+    parks_gdf = prepare_gdf("us_nps_units_parks.gpkg", target_crs)
+    state_gdf = prepare_gdf("california_state_boundary.gpkg", target_crs)
+
+    log_park_summary(parks_gdf)
+    calpark = clip_parks_to_state(parks_gdf, state_gdf)
 
 
-# TODO: CRS and projections
-# TODO: Geometric operations
+# TODO: spatial ops:
+# What percent of total?
+# How much of each park lies within California?
+# Are certain park types (monuments, preserves, recreation areas) more common in California?
+# Does California contain the majority of any multi-state parks?
+# Distance of other park centroids to California centroid
+
 # TODO: Filtering & attributes
 # TODO: Spatial joins & overlays
 # TODO: Visualization
