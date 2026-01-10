@@ -1,15 +1,27 @@
 """
-Main module for geospatial practice with GeoPandas.
+Main module for geospatial practice using GeoPandas.
 
-Includes functions for:
-- Resolving input file paths
-- Loading GeoDataFrames
-- Cleaning and validating geometries
-- Reprojecting to pre-defined CRS
+This module implements a small, reproducible geospatial analysis workflow
+focused on vector data processing and spatial relationships.
 
-This module is intended for daily geospatial exercises with:
-    US National Parks data: https://irma.nps.gov/DataStore/
-    California state boundary data: https://data.ca.gov/dataset/
+Included functionality:
+- Resolving input and output file paths
+- Loading geospatial datasets into GeoDataFrames
+- Validating, cleaning, and repairing geometries
+- Reprojecting datasets to a user-defined CRS
+- Logging descriptive statistics and summary information
+- Performing spatial clipping operations
+- Quantifying area differences before and after spatial operations
+
+The module uses real-world public datasets:
+- US National Parks unit boundaries (filtered subset): https://irma.nps.gov/DataStore/
+- California state boundary: https://data.ca.gov/dataset/
+
+Note
+----
+The National Parks dataset used in this project is a reduced subset of the
+original source data. The filtering was performed to limit dataset size and
+complexity for focused analysis and faster iteration during development.
 """
 
 import logging
@@ -34,7 +46,7 @@ def load_input_path(filename: str) -> Path:
         Full path to the GeoPackage file containing US National Parks units.
     """
     file_path = get_input_path(filename)
-    logger.info("Path resolved")
+    logger.info("Resolved input path: %s", file_path)
     return file_path
 
 def load_gdf(file_path: Path) -> gpd.GeoDataFrame:
@@ -120,7 +132,7 @@ def reproject_gdf(gdf: gpd.GeoDataFrame, target_crs: str) -> gpd.GeoDataFrame:
 
     return gdf
 
-def prepare_gdf(filename: str, target_crs: str) -> None:
+def prepare_gdf(filename: str, target_crs: str) -> gpd.GeoDataFrame:
     """
     Load, clean, and reproject a geospatial dataset.
 
@@ -169,38 +181,90 @@ def log_park_summary(gdf: gpd.GeoDataFrame) -> None:
     logger.info("Park names in CA: %s", gdf.loc[gdf['STATE']=='CA', 'PARKNAME'])
 
     grouped = gdf.dissolve(by='STATE', as_index=False)
-    logger.info("The are Parks in %s states", len(grouped['STATE']))
+    logger.info("There are park units in %s states", len(grouped['STATE']))
 
     return
 
-def clip_parks_to_state(parks_gdf: gpd.GeoDataFrame, state_gdf: gpd.GeoDataFrame) -> None:
+def analyze_state_clipped_parks(parks_gdf: gpd.GeoDataFrame, state_gdf: gpd.GeoDataFrame) -> None:
     """
-    Perform spatial operations between park units and a state boundary.
+    Clip National Park unit geometries to a state boundary and quantify area loss.
 
-    This function identifies National Park units that intersect the
-    provided state boundary by spatially clipping park geometries to
-    the state extent. It is intended to demonstrate and validate spatial
-    filtering operations and may be extended for additional spatial
-    analyses.
+    This function performs a spatial clip operation between National Park
+    unit geometries and a single-state boundary. It computes both
+    dataset-level and feature-level area statistics to identify parks
+    that are partially outside the target state.
+
+    The function logs:
+    - Total national park area
+    - Total park area within the state
+    - Percentage of total park area within the state
+    - Feature-level percentage of each park retained after clipping
+
+    Parks whose clipped area differs from their original area are
+    identified as crossing the state boundary.
 
     Parameters
     ----------
     parks_gdf : gpd.GeoDataFrame
-        GeoDataFrame containing National Park unit geometries.
+        GeoDataFrame containing National Park unit geometries. Must be
+        projected in an equal-area CRS.
     state_gdf : gpd.GeoDataFrame
-        GeoDataFrame containing a single state boundary geometry.
+        GeoDataFrame containing a single state boundary geometry,
+        projected in the same CRS as `parks_gdf`.
 
     Returns
     -------
     gpd.GeoDataFrame
-        GeoDataFrame containing park geometries clipped to the state
-        boundary.
+        GeoDataFrame of National Park units clipped to the state boundary,
+        including only the portions that lie within the state.
     """
 
-    calpark = gpd.clip(parks_gdf, state_gdf)
-    logger.info("Clipped parks in CA: %s", calpark.loc[calpark['STATE']=='CA', 'PARKNAME'])
+    if parks_gdf.crs != state_gdf.crs:
+        raise ValueError("parks_gdf and state_gdf must share the same CRS")
+    
+    if len(state_gdf) != 1:
+        raise ValueError("state_gdf must contain exactly one geometry")
 
-    return calpark
+    # --- Dataset-level summary ---
+
+    # Calculate total area of all parks (km²) before clipping
+    total_parks_area_km2 = round(parks_gdf.area.sum()/1000000,2)
+    logger.info("Total national park area: %s km2", total_parks_area_km2)
+
+    # Clip park geometries to the state boundary
+    # This identifies portions of parks within the state
+    parks_clipped = gpd.clip(parks_gdf, state_gdf)
+    logger.info("Clipped parks in CA: %s", parks_clipped.loc[parks_clipped['STATE']=='CA', 'PARKNAME'])
+
+    # Calculate total area after clipping
+    clipped_parks_area_km2 = round(parks_clipped.area.sum()/1000000,2)
+    logger.info("California parks area: %s km2", clipped_parks_area_km2)
+
+    # Compute the percentage of park area retained within the state
+    clipped_area_percentage = round(clipped_parks_area_km2 / total_parks_area_km2 * 100,2)
+    logger.info("California area percentage: %s", clipped_area_percentage)
+
+
+    # --- Feature-level comparison ---
+
+    # Copy original parks to preserve data before adding area columns
+    parks_copy = parks_gdf.copy()
+    parks_copy['area_original_gdf'] = parks_copy.area
+    parks_clipped['area_clipped_gdf'] = parks_clipped.area
+
+    # Merge clipped parks with original areas to compare per park
+    parks_area_comparison = parks_clipped.merge(parks_copy, how='inner', on='fid')
+    
+    # Compute percentage of each park's area that remains after clipping
+    parks_area_comparison['area_comparison'] = (parks_area_comparison['area_clipped_gdf'] / parks_area_comparison['area_original_gdf'] * 100).round().astype(int)
+
+    # Log parks that were partially clipped
+    if (parks_area_comparison['area_comparison'] != 100).any():
+        logger.info("NP area %s was clipped by the California state boundary", parks_area_comparison.loc[parks_area_comparison['area_comparison']!=100, 'fid'])
+    else:
+        logger.info("No NP were clipped by the California state boundary")
+
+    return parks_clipped
 
 if __name__ == "__main__":
 
@@ -210,16 +274,8 @@ if __name__ == "__main__":
     state_gdf = prepare_gdf("california_state_boundary.gpkg", target_crs)
 
     log_park_summary(parks_gdf)
-    calpark = clip_parks_to_state(parks_gdf, state_gdf)
+    parks_clipped = analyze_state_clipped_parks(parks_gdf, state_gdf)
 
 
-# TODO: spatial ops:
-# What percent of total?
-# How much of each park lies within California?
-# Are certain park types (monuments, preserves, recreation areas) more common in California?
-# Does California contain the majority of any multi-state parks?
-# Distance of other park centroids to California centroid
 
-# TODO: Filtering & attributes
-# TODO: Spatial joins & overlays
 # TODO: Visualization
