@@ -28,6 +28,8 @@ import logging
 from pathlib import Path
 import geopandas as gpd
 from pyproj import CRS
+import matplotlib.pyplot as plt
+import contextily as cx
 from utils.paths import get_input_path, get_output_path
 
 logging.basicConfig(
@@ -264,7 +266,60 @@ def analyze_state_clipped_parks(parks_gdf: gpd.GeoDataFrame, state_gdf: gpd.GeoD
     else:
         logger.info("No NP were clipped by the California state boundary")
 
-    return parks_clipped
+    return parks_clipped, state_gdf
+
+def plot_park_areas_by_state(parks_clipped: gpd.GeoDataFrame, state_gdf: gpd.GeoDataFrame) -> None:
+    """
+    Plot clipped National Park areas within state boundary.
+
+    This function visualizes National Park unit geometries that have been
+    clipped to state boundary. Park polygons are symbolized by their
+    clipped area values, and the state boundary is shown as an outline.
+    A web basemap is added for geographic context.
+
+    All geometries are reprojected to Web Mercator (EPSG:3857) for
+    compatibility with the basemap.
+
+    Parameters
+    ----------
+    parks_clipped : gpd.GeoDataFrame
+        GeoDataFrame of National Park units clipped to a state boundary.
+        Must include an 'area_clipped_gdf' column.
+    state_gdf : gpd.GeoDataFrame
+        GeoDataFrame containing the corresponding state boundary geometry.
+
+    Returns
+    -------
+    None
+        Displays a map of clipped park areas.
+    """
+
+    parks_wm = parks_clipped.to_crs(epsg=3857)
+    state_wm = state_gdf.to_crs(epsg=3857)
+
+    parks_wm['area_clipped_gdf'] = parks_wm['area_clipped_gdf'].round(2)
+    
+    fig, ax = plt.subplots(figsize=(6, 6), dpi=150)
+
+    state_wm.plot(ax=ax,
+                  color='none',
+                  edgecolor='black',
+                  linewidth=0.8,
+                  zorder=1)
+
+    parks_wm.plot(ax=ax,
+                  column="area_clipped_gdf",
+                  cmap="viridis",
+                  legend=True,
+                  legend_kwds={"label": "Park area (km²)"})
+
+    cx.add_basemap(ax, source=cx.providers.CartoDB.PositronNoLabels)
+
+    ax.set_title("National Park Areas Within State Boundary", fontsize=12)
+    ax.set_axis_off()
+    plt.show();
+
+    return
 
 if __name__ == "__main__":
 
@@ -274,8 +329,7 @@ if __name__ == "__main__":
     state_gdf = prepare_gdf("california_state_boundary.gpkg", target_crs)
 
     log_park_summary(parks_gdf)
-    parks_clipped = analyze_state_clipped_parks(parks_gdf, state_gdf)
+    parks_clipped, state_gdf = analyze_state_clipped_parks(parks_gdf, state_gdf)
 
+    plot_park_areas_by_state(parks_clipped, state_gdf)
 
-
-# TODO: Visualization
