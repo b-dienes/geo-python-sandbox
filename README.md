@@ -28,6 +28,7 @@ geo-python-sandbox/
 │   └── outputs/      # Outputs from scripts (processed GeoDataFrames, exports, plots)
 ├── src/
 │   ├── geopandas_demo.py       # GeoPandas workflow: vector processing, clipping, area analysis
+│   ├── main.py                 # Pipeline linking vector processing and raster preparation
 │   └── utils/
 │       └── paths.py            # Helper functions for resolving file paths
 ├── README.md
@@ -84,3 +85,4 @@ Planned enhancements to the repository:
 
 - Add raster analysis workflows with Rasterio
 - Generate visualizations for vector and raster data
+- Demonstrate end-to-end vector-to-raster workflows
