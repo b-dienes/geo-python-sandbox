@@ -20,3 +20,7 @@ data/outputs/
 *.prj
 *.shx
 *.gpkg
+
+# AUX files
+*.aux
+*.aux.xml
