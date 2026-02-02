@@ -122,8 +122,6 @@ def clean_gdf(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 def reproject_gdf(gdf: gpd.GeoDataFrame, target_crs: str) -> gpd.GeoDataFrame:
 
-    logger.info("Entered reprojection with %s", gdf.crs)
-
     target = CRS.from_user_input(target_crs)
 
     if gdf.crs != target:
