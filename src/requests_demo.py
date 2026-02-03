@@ -1,3 +1,12 @@
+"""
+Satellite imagery downloader for NAIP datasets.
+
+This module provides functions to request and save NAIP raster imagery
+for specified park bounding boxes. Images are retrieved in TIFF format
+from the USGS ImageServer and stored locally in the outputs folder.
+"""
+
+
 import logging
 import requests
 from pathlib import Path
@@ -9,7 +18,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def download_naip(current_park):
+def download_naip(current_park: dict) -> bytes:
+    """
+    Send a request to the NAIP ImageServer to download imagery for the specified bounding box.
+
+    Parameters
+    ----------
+    current_park : dict
+        Current park bounding box prepared for raster download.
+
+    Returns
+    -------
+    response.content : bytes
+        Raw binary content of the downloaded NAIP image (TIFF format).
+
+    Raises
+    -------
+    requests.exceptions.Timeout
+        If the server does not respond within the timeout.
+    requests.exceptions.RequestException
+        For other network-related errors.
+    ValueError
+        If the downloaded content is empty.
+    """
+
     logger.info("Entered NAIP download with %s", current_park["parkname"])
 
     xmin = current_park["bbox"][0]
@@ -42,9 +74,29 @@ def download_naip(current_park):
         
     return response.content
 
+def save_naip_response(current_park: dict, naip_response: bytes) -> None:
+    """
+    Save the downloaded NAIP image to the outputs folder.
 
+    Parameters
+    ----------
+    current_park : dict
+        Current park bounding box prepared for raster download.
 
-def save_naip_response(current_park, naip_response) -> None:
+    naip_response : bytes
+        Raw binary content of the downloaded NAIP image (TIFF format).
+    
+    Returns
+    -------
+    None
+        Saves NAIP imagery to the outputs folder.
+
+    Raises
+    -------
+        PermissionError
+            If the output file cannot be written due to insufficient permissions.
+    """
+
     aoi_name = current_park["parkname"]
     filename = f"{aoi_name}.tif"
 
