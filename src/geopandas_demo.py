@@ -331,10 +331,6 @@ if __name__ == "__main__":
 
     plot_park_areas_by_state(parks_clipped, state_gdf)
 
-    print(parks_clipped.crs)
-    print(parks_clipped.bounds)
-
-
 # Finetune plot
 # Save to drive, add to github
 # Test interactive map: https://geopandas.org/en/stable/docs/user_guide/interactive_mapping.html
