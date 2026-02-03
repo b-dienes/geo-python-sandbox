@@ -1,9 +1,7 @@
 # Geo Python Sandbox
 
-A repository for practicing geospatial Python workflows, demonstrating proficiency in multiple Python GIS libraries.  
-It contains modular, reproducible code for common vector and raster operations, spatial analysis, and geospatial data processing.  
-
-The project is structured to support exploration of multiple geospatial Python libraries, including GeoPandas and Rasterio, with a focus on clear, maintainable, and professional code.
+A repository demonstrating geospatial Python workflows with a focus on vector and raster data processing. 
+It contains modular, reproducible code for vector analysis (fully implemented) and satellite imagery download (functional), with planned raster processing exercises.
 
 ---
 
@@ -13,9 +11,9 @@ Core geospatial Python libraries demonstrated in this repository:
 
 - **GeoPandas** – vector data manipulation, spatial operations, reprojection
 - **PyProj** – coordinate reference system handling
-- **Rasterio** – raster data processing (placeholder for future exercises)
-- **Shapely** – geometry operations
-- **Matplotlib / Folium** – for future visualizations
+- **Matplotlib / Contextily** – geospatial visualization with basemaps
+- **Requests** – fetching remote raster datasets
+- **Rasterio** – planned for future raster data processing and analysis
 
 ---
 
@@ -25,10 +23,11 @@ Core geospatial Python libraries demonstrated in this repository:
 geo-python-sandbox/
 ├── data/
 │   ├── inputs/       # Place input datasets here (GeoPackage, shapefiles, raster files)
-│   └── outputs/      # Outputs from scripts (processed GeoDataFrames, exports, plots)
+│   └── outputs/      # Outputs from scripts (processed GeoDataFrames, exports, plots, downloaded rasters)
 ├── src/
 │   ├── geopandas_demo.py       # GeoPandas workflow: vector processing, clipping, area analysis
-│   ├── main.py                 # Pipeline linking vector processing and raster preparation
+│   ├── requests_demo.py        # Raster workflow: NAIP imagery download and storage
+│   ├── main.py                 # Pipeline linking vector and raster processing
 │   └── utils/
 │       └── paths.py            # Helper functions for resolving file paths
 ├── README.md
@@ -48,8 +47,6 @@ This module demonstrates professional use of GeoPandas for vector data:
 - Clip National Park units to California state boundaries
 - Compute area differences to identify parks partially outside the state
 
-> Note: The National Parks dataset used is a filtered subset to simplify analysis and reduce runtime.
-
 ### Results
 - Console logging provides dataset-level insights:
   - Total national park area
@@ -57,8 +54,22 @@ This module demonstrates professional use of GeoPandas for vector data:
   - Percentage of total area retained within the state
   - Park units partially clipped by the California boundary
 
-- Planned visualizations:
-  - Maps showing park areas before and after clipping
+- Visualization:
+  - Choropleth map of units clipped to the state boundary, color-coded by clipped area
+
+---
+
+## Requests: NAIP Imagery Download
+
+### Workflow
+- Prepare bounding boxes for clipped park polygons (reprojected to Web Mercator)
+- Fetch NAIP aerial imagery via USGS ArcGIS REST API for a given park polygon
+- Save imagery as GeoTIFF files to outputs directory
+
+### Results
+- Downloaded NAIP imagery for sample parks
+- Saved GeoTIFFs can be used for future raster/vector integration
+- CRS and AOI checks ensure correct alignment with vector datasets
 
 ---
 
@@ -85,4 +96,4 @@ Planned enhancements to the repository:
 
 - Add raster analysis workflows with Rasterio
 - Generate visualizations for vector and raster data
-- Demonstrate end-to-end vector-to-raster workflows
+- Integrate vector/raster workflows for end-to-end spatial analysis
