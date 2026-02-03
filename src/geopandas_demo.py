@@ -14,12 +14,12 @@ Included functionality:
 - Quantifying area differences before and after spatial operations
 
 The module uses real-world public datasets:
-- US National Parks unit boundaries (filtered subset): https://irma.nps.gov/DataStore/
+- US NPS unit boundaries (filtered subset): https://irma.nps.gov/DataStore/
 - California state boundary: https://data.ca.gov/dataset/
 
 Note
 ----
-The National Parks dataset used in this project is a reduced subset of the
+The NPS units dataset used in this project is a reduced subset of the
 original source data. The filtering was performed to limit dataset size and
 complexity for focused analysis and faster iteration during development.
 """
