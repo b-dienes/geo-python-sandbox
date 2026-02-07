@@ -14,9 +14,11 @@ from dataclasses import dataclass
 import geopandas as gpd
 from pyproj import CRS
 import numpy as np
+from pathlib import Path
 
 import geopandas_demo
 import requests_demo
+import rasterio_demo
 
 logging.basicConfig(
     level=logging.INFO,
@@ -105,7 +107,7 @@ def prepare_raster_bounding_boxes(parks_clipped: gpd.GeoDataFrame) -> list[dict]
 
     return parks_dict
 
-def run_image_downloader(parks_dict: list[dict]) -> None:
+def run_image_downloader(parks_dict: list[dict]) -> Path:
     """
     Run the NAIP raster download workflow for the first park in the list.
 
@@ -123,9 +125,17 @@ def run_image_downloader(parks_dict: list[dict]) -> None:
 
     current_park = parks_dict[0]
     naip_response = requests_demo.download_naip(current_park)
-    requests_demo.save_naip_response(current_park, naip_response)
+    naip_image_path = requests_demo.save_naip_response(current_park, naip_response)
+
+    return naip_image_path
+
+def run_raster_processing(naip_image_path: Path) -> None:
+
+    rasterio_demo.prepare_raster(naip_image_path)
+
 
 filled_user_input = user_input()
 parks_clipped = run_vector_pipeline(filled_user_input)
 parks_dict = prepare_raster_bounding_boxes(parks_clipped)
-run_image_downloader(parks_dict)
+naip_image_path = run_image_downloader(parks_dict)
+run_raster_processing(naip_image_path)
