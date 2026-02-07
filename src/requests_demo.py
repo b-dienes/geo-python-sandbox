@@ -74,7 +74,7 @@ def download_naip(current_park: dict) -> bytes:
         
     return response.content
 
-def save_naip_response(current_park: dict, naip_response: bytes) -> None:
+def save_naip_response(current_park: dict, naip_response: bytes) -> Path:
     """
     Save the downloaded NAIP image to the outputs folder.
 
@@ -110,3 +110,5 @@ def save_naip_response(current_park: dict, naip_response: bytes) -> None:
         raise
 
     logger.info("NAIP image saved to %s", output_path)
+
+    return output_path
