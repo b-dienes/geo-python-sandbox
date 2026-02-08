@@ -107,7 +107,7 @@ def prepare_raster_bounding_boxes(parks_clipped: gpd.GeoDataFrame) -> list[dict]
 
     return parks_dict
 
-def run_image_downloader(parks_dict: list[dict]) -> Path:
+def run_image_downloader(parks_dict: list[dict]) -> bytes:
     """
     Run the NAIP raster download workflow for the first park in the list.
 
@@ -125,17 +125,16 @@ def run_image_downloader(parks_dict: list[dict]) -> Path:
 
     current_park = parks_dict[0]
     naip_response = requests_demo.download_naip(current_park)
-    naip_image_path = requests_demo.save_naip_response(current_park, naip_response)
 
-    return naip_image_path
+    return current_park, naip_response
 
-def run_raster_processing(naip_image_path: Path) -> None:
+def run_raster_processing(current_park, naip_response: bytes) -> None:
 
+    naip_image_path = rasterio_demo.save_naip_response(current_park, naip_response)
     rasterio_demo.prepare_raster(naip_image_path)
-
 
 filled_user_input = user_input()
 parks_clipped = run_vector_pipeline(filled_user_input)
 parks_dict = prepare_raster_bounding_boxes(parks_clipped)
-naip_image_path = run_image_downloader(parks_dict)
-run_raster_processing(naip_image_path)
+current_park, naip_response = run_image_downloader(parks_dict)
+run_raster_processing(current_park, naip_response)
