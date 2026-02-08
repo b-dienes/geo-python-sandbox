@@ -9,6 +9,7 @@ from the USGS ImageServer and stored locally in the outputs folder.
 
 import logging
 import requests
+from dataclasses import dataclass
 from pathlib import Path
 from utils.paths import get_input_path, get_output_path
 
@@ -18,7 +19,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def download_naip(current_park: dict) -> bytes:
+@dataclass
+class NAIPImage:
+    park_name: str
+    data: bytes
+    width: int
+    height: int
+    crs: int
+    bbox: list
+
+def download_naip(current_park: dict) -> NAIPImage:
     """
     Send a request to the NAIP ImageServer to download imagery for the specified bounding box.
 
@@ -44,17 +54,19 @@ def download_naip(current_park: dict) -> bytes:
 
     logger.info("Entered NAIP download with %s", current_park["parkname"])
 
-    xmin = current_park["bbox"][0]
-    ymin = current_park["bbox"][1]
-    xmax = current_park["bbox"][2]
-    ymax = current_park["bbox"][3]
+    park_name = current_park["parkname"]
+    width = 2500
+    height = 2500
+    bbox_list = current_park["bbox"]
+    bbox_str = ','.join(map(str, bbox_list))
+    crs =  102100
 
     url = "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage"
     params = {
-    "bbox": str(xmin) + ',' + str(ymin) + ',' + str(xmax) + ',' + str(ymax),
-    "bboxSR": 102100,
-    "imageSR": 102100,
-    "size": str(2500) + ',' + str(2500),
+    "bbox": bbox_str,
+    "bboxSR": crs,
+    "imageSR": crs,
+    "size": str(width) + ',' + str(height),
     "adjustAspectRatio": True,
     "format": "tiff",
     "f": "image",
@@ -71,44 +83,14 @@ def download_naip(current_park: dict) -> bytes:
         raise
     if not response.content:
         raise ValueError("NAIP download content is empty, Check your AOI")
-        
-    return response.content
-
-def save_naip_response(current_park: dict, naip_response: bytes) -> Path:
-    """
-    Save the downloaded NAIP image to the outputs folder.
-
-    Parameters
-    ----------
-    current_park : dict
-        Current park bounding box prepared for raster download.
-
-    naip_response : bytes
-        Raw binary content of the downloaded NAIP image (TIFF format).
     
-    Returns
-    -------
-    None
-        Saves NAIP imagery to the outputs folder.
+    data = response.content
 
-    Raises
-    -------
-        PermissionError
-            If the output file cannot be written due to insufficient permissions.
-    """
-
-    aoi_name = current_park["parkname"]
-    filename = f"{aoi_name}.tif"
-
-    output_path = get_output_path(filename)
-
-    try:
-        with open(output_path, 'wb') as f:
-                f.write(naip_response)
-    except PermissionError:
-        logger.error("No permission to write NAIP image to %s", output_path)
-        raise
-
-    logger.info("NAIP image saved to %s", output_path)
-
-    return output_path
+    return NAIPImage(
+        park_name = park_name,
+        data = data,
+        width = width,
+        height = height,
+        crs = crs,
+        bbox = bbox_list
+    )
