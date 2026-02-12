@@ -13,11 +13,10 @@ import logging
 from dataclasses import dataclass
 import geopandas as gpd
 from pyproj import CRS
-import numpy as np
-from pathlib import Path
 
 import geopandas_demo
 import requests_demo
+from requests_demo import NAIPImage
 import rasterio_demo
 
 logging.basicConfig(
@@ -107,34 +106,52 @@ def prepare_raster_bounding_boxes(parks_clipped: gpd.GeoDataFrame) -> list[dict]
 
     return parks_dict
 
-def run_image_downloader(parks_dict: list[dict]) -> bytes:
+def run_image_downloader(current_park: dict) -> NAIPImage:
     """
-    Run the NAIP raster download workflow for the first park in the list.
+    Run the NAIP raster download workflow for the current park in the list.
 
     Parameters
     ----------
-    parks_dict : list[dict]
-        List of parks with bounding boxes prepared for raster download.
+    current_park : dict
+        Current park with bounding boxes prepared for raster download.
+
+    Returns
+    -------
+    NAIPImage
+        Dataclass.
+    """
+    logger.info("Entering requests demo")
+
+    naip_response = requests_demo.download_naip(current_park)
+
+    return naip_response
+
+def run_raster_processing(naip_response: NAIPImage) -> None:
+    """
+    Save the downloaded NAIP image to the outputs folder.
+
+    Parameters
+    ----------
+    naip_response : NAIPImage
+        Dataclass.
 
     Returns
     -------
     None
-        Saves NAIP imagery to the outputs folder.
     """
-    logger.info("Entering requests demo")
 
-    current_park = parks_dict[0]
-    naip_response = requests_demo.download_naip(current_park)
-
-    return current_park, naip_response
-
-def run_raster_processing(current_park, naip_response: bytes) -> None:
-
-    naip_image_path = rasterio_demo.save_naip_response(current_park, naip_response)
-    rasterio_demo.prepare_raster(naip_image_path)
+    naip_image_path = rasterio_demo.save_naip_response(naip_response)
+    rasterio_demo.calculate_ndvi(naip_image_path)
 
 filled_user_input = user_input()
 parks_clipped = run_vector_pipeline(filled_user_input)
 parks_dict = prepare_raster_bounding_boxes(parks_clipped)
-current_park, naip_response = run_image_downloader(parks_dict)
-run_raster_processing(current_park, naip_response)
+
+
+# For testing purposes the first element of the list of dictionaries is used
+# Later on it can be a loop feeding dictionaries one by one to run_image_downloader
+current_park = parks_dict[0]
+
+
+naip_response = run_image_downloader(current_park)
+run_raster_processing(naip_response)
