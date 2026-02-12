@@ -3,26 +3,24 @@ import rasterio
 from pathlib import Path
 from utils.paths import get_input_path, get_output_path
 from requests_demo import NAIPImage
+import numpy as np
 
 
 logger = logging.getLogger(__name__)
 
-def save_naip_response(current_park: dict, naip_response: NAIPImage) -> Path:
+def save_naip_response(naip_response: NAIPImage) -> Path:
     """
     Save the downloaded NAIP image to the outputs folder.
 
     Parameters
     ----------
-    current_park : dict
-        Current park bounding box prepared for raster download.
-
-    naip_response : bytes
-        Raw binary content of the downloaded NAIP image (TIFF format).
+    naip_response : NAIPImage
+        Dataclass.
     
     Returns
     -------
-    None
-        Saves NAIP imagery to the outputs folder.
+    output_path
+        Saves NAIP imagery to the outputs folder. Returns path to the output .tif file.
 
     Raises
     -------
@@ -30,7 +28,7 @@ def save_naip_response(current_park: dict, naip_response: NAIPImage) -> Path:
             If the output file cannot be written due to insufficient permissions.
     """
 
-    aoi_name = current_park["parkname"]
+    aoi_name = naip_response.park_name
     filename = f"{aoi_name}.tif"
 
     output_path = get_output_path(filename)
@@ -47,28 +45,21 @@ def save_naip_response(current_park: dict, naip_response: NAIPImage) -> Path:
     return output_path
 
 
-def prepare_raster(naip_image_path: Path) -> None:
-
+def calculate_ndvi(naip_image_path: Path) -> None:
 
     dataset = rasterio.open(naip_image_path)
-
-    print(dataset.meta)
 
     red = dataset.read(1)
     nir = dataset.read(4)
 
     ndvi = (nir - red) / (nir + red)
 
-    print(ndvi)
-
-    # TODO:
-	# Compute a simple band statistic (NDVI, mean brightness, histogram).
-	# Mask raster using your clipped parks polygons (vector → raster mask).
-
     return dataset, ndvi
 
 
-def save_raster(naip_dataset, naip_image_array, naip_image_band1_path):
+def save_ndvi_raster(naip_dataset, naip_image_array, naip_image_band1_path):
+
+    naip_image_array = naip_image_array.astype(np.float32)
 
     with rasterio.open(
         naip_image_band1_path,
@@ -87,5 +78,5 @@ def save_raster(naip_dataset, naip_image_array, naip_image_band1_path):
 if __name__ == "__main__":
     naip_image_path = get_output_path("Sequoia.tif")
     naip_image_band1_path = get_output_path("Sequoia_NDVI.tif")
-    naip_dataset, naip_image_array = prepare_raster(naip_image_path)
-    save_raster(naip_dataset, naip_image_array, naip_image_band1_path)
+    naip_dataset, naip_image_array = calculate_ndvi(naip_image_path)
+    save_ndvi_raster(naip_dataset, naip_image_array, naip_image_band1_path)
