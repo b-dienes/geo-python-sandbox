@@ -10,14 +10,14 @@ This script orchestrates vector and raster workflows:
 """
 
 import logging
-from dataclasses import dataclass
 import geopandas as gpd
-from pyproj import CRS
 
 import geopandas_demo
 import requests_demo
-from requests_demo import NAIPImage
 import rasterio_demo
+from requests_demo import NAIPImage
+from utils.inputs import UserInput, user_input
+from utils.geometry import prepare_raster_bounding_boxes, create_tiles
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,30 +25,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@dataclass
-class UserInput:
-    target_crs: str
-    parks_filename: str
-    state_filename: str
-
-def user_input() -> UserInput:
-    """
-    Prepare default user inputs for the geospatial workflow.
-
-    Returns
-    -------
-    UserInput
-        Dataclass containing CRS, parks filename, and state filename.
-    """
-    target_crs = 'EPSG:5070'
-    parks_filename = "us_nps_units_parks.gpkg"
-    state_filename = "california_state_boundary.gpkg"
-
-    return UserInput(
-        target_crs = target_crs,
-        parks_filename = parks_filename,
-        state_filename = state_filename
-    )
 
 def run_vector_pipeline(user_input: UserInput) -> gpd.GeoDataFrame:
     """
@@ -77,42 +53,14 @@ def run_vector_pipeline(user_input: UserInput) -> gpd.GeoDataFrame:
     return parks_clipped
 
 
-def prepare_raster_bounding_boxes(parks_clipped: gpd.GeoDataFrame) -> list[dict]:
-    """
-    Prepare bounding boxes for raster requests in Web Mercator projection.
 
-    Parameters
-    ----------
-    gpd.GeoDataFrame
-        parks_clipped : GeoDataFrame of parks clipped to the state boundary.
-
-    Returns
-    -------
-    list[dict]
-        List of dictionaries with keys: "fid", "parkname", "bbox" for raster download.
-    """
-    logger.info("Entered bbox reprojection to Mercator")
-    target_crs = CRS.from_user_input("EPSG:3857")
-
-    if parks_clipped.crs != target_crs:
-        parks_clipped = parks_clipped.to_crs(target_crs)
-
-    bboxes = parks_clipped.geometry.bounds.to_numpy().tolist()
-
-    parks_dict = [
-        {"fid": i, "parkname": n, "bbox": b}
-        for i, n, b in zip(parks_clipped["fid"], parks_clipped["PARKNAME"], bboxes)
-    ]
-
-    return parks_dict
-
-def run_image_downloader(current_park: dict) -> NAIPImage:
+def run_image_downloader(current_tile: dict, user_input: UserInput) -> NAIPImage:
     """
     Run the NAIP raster download workflow for the current park in the list.
 
     Parameters
     ----------
-    current_park : dict
+    current_tile : dict
         Current park with bounding boxes prepared for raster download.
 
     Returns
@@ -122,7 +70,7 @@ def run_image_downloader(current_park: dict) -> NAIPImage:
     """
     logger.info("Entering requests demo")
 
-    naip_response = requests_demo.download_naip(current_park)
+    naip_response = requests_demo.download_naip(current_tile, user_input)
 
     return naip_response
 
@@ -141,17 +89,21 @@ def run_raster_processing(naip_response: NAIPImage) -> None:
     """
 
     naip_image_path = rasterio_demo.save_naip_response(naip_response)
-    rasterio_demo.calculate_ndvi(naip_image_path)
+    naip_dataset, naip_image_array = rasterio_demo.calculate_ndvi(naip_image_path)
+    rasterio_demo.save_ndvi_raster(naip_dataset, naip_image_array, naip_response)
 
 filled_user_input = user_input()
 parks_clipped = run_vector_pipeline(filled_user_input)
+
 parks_dict = prepare_raster_bounding_boxes(parks_clipped)
+all_tiles = create_tiles(parks_dict, filled_user_input)
 
+# For testing purposes the current tiles is the whole bbox of the first park
+filtered_tiles = [tile for tile in all_tiles if tile['parkname'] == 'Devils Postpile']
 
-# For testing purposes the first element of the list of dictionaries is used
-# Later on it can be a loop feeding dictionaries one by one to run_image_downloader
-current_park = parks_dict[0]
+for current_tile in filtered_tiles:
 
+    naip_response = run_image_downloader(current_tile, filled_user_input)
 
-naip_response = run_image_downloader(current_park)
-run_raster_processing(naip_response)
+    run_raster_processing(naip_response)
+
