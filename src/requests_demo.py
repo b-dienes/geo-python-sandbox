@@ -6,12 +6,11 @@ for specified park bounding boxes. Images are retrieved in TIFF format
 from the USGS ImageServer and stored locally in the outputs folder.
 """
 
-
 import logging
 import requests
 from dataclasses import dataclass
-from pathlib import Path
-from utils.paths import get_input_path, get_output_path
+from utils.inputs import UserInput
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,19 +21,20 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NAIPImage:
     park_name: str
+    tile_code: str
     data: bytes
     width: int
     height: int
     crs: int
     bbox: list
 
-def download_naip(current_park: dict) -> NAIPImage:
+def download_naip(current_tile: dict, user_input: UserInput) -> NAIPImage:
     """
     Send a request to the NAIP ImageServer to download imagery for the specified bounding box.
 
     Parameters
     ----------
-    current_park : dict
+    current_tile : dict
         Current park bounding box prepared for raster download.
 
     Returns
@@ -52,12 +52,13 @@ def download_naip(current_park: dict) -> NAIPImage:
         If the downloaded content is empty.
     """
 
-    logger.info("Entered NAIP download with %s", current_park["parkname"])
+    logger.info("Entered NAIP download with %s", current_tile["parkname"])
 
-    park_name = current_park["parkname"]
-    width = 2500
-    height = 2500
-    bbox_list = current_park["bbox"]
+    park_name = current_tile["parkname"]
+    tile_code = current_tile["tile_code"]
+    width = user_input.naip_width
+    height = user_input.naip_height
+    bbox_list = current_tile["tile_bbox"]
     bbox_str = ','.join(map(str, bbox_list))
     crs =  102100
 
@@ -88,6 +89,7 @@ def download_naip(current_park: dict) -> NAIPImage:
 
     return NAIPImage(
         park_name = park_name,
+        tile_code = tile_code,
         data = data,
         width = width,
         height = height,
