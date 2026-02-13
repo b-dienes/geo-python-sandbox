@@ -1,36 +1,22 @@
 """
-Main module for geospatial practice using GeoPandas.
-
-This module implements a small, reproducible geospatial analysis workflow
-focused on vector data processing and spatial relationships.
-
-Included functionality:
-- Resolving input and output file paths
-- Loading geospatial datasets into GeoDataFrames
-- Validating, cleaning, and repairing geometries
-- Reprojecting datasets to a user-defined CRS
-- Logging descriptive statistics and summary information
-- Performing spatial clipping operations
-- Quantifying area differences before and after spatial operations
+Validate and clean geometries, reproject to a user-defined CRS, log statistics.
+Perform spatial clipping operations and quantifying area differences before and after clipping.
 
 The module uses real-world public datasets:
 - US NPS unit boundaries (filtered subset): https://irma.nps.gov/DataStore/
 - California state boundary: https://data.ca.gov/dataset/
-
-Note
-----
-The NPS units dataset used in this project is a reduced subset of the
-original source data. The filtering was performed to limit dataset size and
-complexity for focused analysis and faster iteration during development.
 """
 
 import logging
 from pathlib import Path
+
 import geopandas as gpd
 from pyproj import CRS
 import matplotlib.pyplot as plt
 import contextily as cx
+
 from utils.paths import get_input_path, get_output_path
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,10 +28,15 @@ def load_input_path(filename: str) -> Path:
     """
     Resolve the path to the input GeoPackage file.
 
+    Parameters
+    ----------
+    filename : str
+        Input geospatial file name.
+
     Returns
     -------
-    Path
-        Full path to the GeoPackage file containing US National Parks units.
+    file_path: Path
+        Path to the GeoPackage file containing US National Parks units.
     """
     file_path = get_input_path(filename)
     logger.info("Resolved input path: %s", file_path)
@@ -62,7 +53,7 @@ def load_gdf(file_path: Path) -> gpd.GeoDataFrame:
 
     Returns
     -------
-    gpd.GeoDataFrame
+    gdf: gpd.GeoDataFrame
         Loaded GeoDataFrame.
     """
     gdf = gpd.read_file(file_path)
@@ -73,12 +64,6 @@ def clean_gdf(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Validate and clean a GeoDataFrame.
 
-    Checks performed:
-    - GeoDataFrame is not empty
-    - No null geometries
-    - CRS is defined
-    - Geometries are valid (invalid geometries are fixed)
-
     Parameters
     ----------
     gdf : gpd.GeoDataFrame
@@ -86,7 +71,7 @@ def clean_gdf(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     Returns
     -------
-    gpd.GeoDataFrame
+    gdf: gpd.GeoDataFrame
         Cleaned and validated GeoDataFrame.
     
     Raises
