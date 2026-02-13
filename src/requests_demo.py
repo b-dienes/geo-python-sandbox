@@ -1,21 +1,15 @@
 """
-Satellite imagery downloader for NAIP datasets.
-
-This module provides functions to request and save NAIP raster imagery
-for specified park bounding boxes. Images are retrieved in TIFF format
-from the USGS ImageServer and stored locally in the outputs folder.
+Download NAIP imagery for park tiles and return satelite imagery and tile data as NAIPImage objects.
 """
 
 import logging
+
 import requests
+
 from dataclasses import dataclass
 from utils.inputs import UserInput
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -26,26 +20,32 @@ class NAIPImage:
     width: int
     height: int
     crs: int
-    bbox: list
+    bbox: list[float]
 
 def download_naip(current_tile: dict, user_input: UserInput) -> NAIPImage:
     """
-    Send a request to the NAIP ImageServer to download imagery for the specified bounding box.
+    Download a NAIP image tile from the USGS ImageServer.
 
     Parameters
     ----------
     current_tile : dict
-        Current park bounding box prepared for raster download.
+        Dictionary containing tile metadata:
+        - 'fid': str
+        - 'parkname': str
+        - 'tile_code': str
+        - 'tile_bbox': list of floats [xmin, ymin, xmax, ymax]
+    user_input : UserInput
+        Dataclass containing user-defined download parameters, e.g., image width and height.
 
     Returns
     -------
-    response.content : bytes
-        Raw binary content of the downloaded NAIP image (TIFF format).
+    naip_response: NAIPImage
+        Dataclass containing raw TIFF bytes and metadata for the tile.
 
     Raises
-    -------
+    ------
     requests.exceptions.Timeout
-        If the server does not respond within the timeout.
+        If the server does not respond within the timeout period.
     requests.exceptions.RequestException
         For other network-related errors.
     ValueError

@@ -1,9 +1,15 @@
-from utils.inputs import UserInput
+"""
+Generate raster bounding boxes and tiles for parks in Web Mercator projection.
+"""
 
+import logging
 import math
+
 import geopandas as gpd
 from pyproj import CRS
-import logging
+
+from utils.inputs import UserInput
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +19,8 @@ def prepare_raster_bounding_boxes(parks_clipped: gpd.GeoDataFrame) -> list[dict]
 
     Parameters
     ----------
-    gpd.GeoDataFrame
-        parks_clipped : GeoDataFrame of parks clipped to the state boundary.
+    parks_clipped : gpd.GeoDataFrame
+        GeoDataFrame of parks clipped to the state boundary (see geopandas_demo.py).
 
     Returns
     -------
@@ -36,17 +42,25 @@ def prepare_raster_bounding_boxes(parks_clipped: gpd.GeoDataFrame) -> list[dict]
 
     return parks_dict
 
-def create_tiles(parks_dict, user_input: UserInput):
+def create_tiles(parks_dict: list[dict], user_input: UserInput) -> list[dict]:
     """
-    Tiles are generated per park bounding box.
-    This design favors implementation clarity over statewide tile reuse.
-    In production systems, a master statewide grid would typically be used to avoid redundant downloads.
+    Generate grid tiles for each park bounding box based on user-defined resolution.
+
+    Parameters
+    ----------
+    parks_dict : list of dict
+        Each dict has keys: 'fid', 'parkname', 'bbox'.
+    user_input : UserInput
+        Dataclass that also contains NAIP raster parameters: resolution, width, height.
+
+    Returns
+    -------
+    list of dict
+        Each dict represents a tile with keys: 'fid', 'parkname', 'tile_code', 'tile_bbox'.
     """
-    # Global origin
     origin_x = 0
     origin_y = 0
 
-    # Define grid steps
     resolution = user_input.naip_resolution
     width = user_input.naip_width
     height = user_input.naip_height
@@ -54,14 +68,13 @@ def create_tiles(parks_dict, user_input: UserInput):
     stepx = width * resolution
     stepy= height * resolution
 
-
     all_tiles = []
 
     for park in parks_dict:
 
         xmin, ymin, xmax, ymax = park["bbox"]
 
-        # Define global grid cell coordinates covering the current park
+        # Define where global grid cells are covering the current park
         tile_x_start = math.floor(xmin / stepx) * stepx
         tile_y_start = math.floor(ymin / stepy) * stepy
 

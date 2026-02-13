@@ -1,3 +1,7 @@
+"""
+Prepare default user inputs for the geospatial workflow.
+"""
+
 from dataclasses import dataclass
 
 @dataclass
@@ -16,7 +20,8 @@ def user_input() -> UserInput:
     Returns
     -------
     UserInput
-        Dataclass containing CRS, parks filename, and state filename.
+        Dataclass containing CRS, parks filename, state filename,
+        NAIP satellite image pixel size (in meters), width (in pixels), length (in pixels)
     """
     target_crs = 'EPSG:5070'
     parks_filename = "us_nps_units_parks.gpkg"
