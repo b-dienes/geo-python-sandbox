@@ -7,14 +7,19 @@ def get_input_path(filename: str) -> Path:
     """
     Returns the absolute path to a file in the data/inputs folder.
 
-    Args:
-        filename (str): Name of the input file.
+    Parameters
+    ----------
+    filename: str
+        Name of the input file.
 
-    Returns:
-        Path: Absolute Path object pointing to the input file.
+    Returns
+    -------
+    input_path: Path
+        Absolute Path object pointing to the input file.
 
-    Raises:
-        FileNotFoundError: If the input file does not exist.
+    Raises
+    ------
+    FileNotFoundError: If the input file does not exist.
     """
     input_path = DATA_DIR / "inputs" / filename
 
@@ -27,11 +32,15 @@ def get_output_path(filename: str) -> Path:
     """
     Returns the absolute path to a file in the data/outputs folder.
 
-    Args:
-        filename (str): Name of the output file.
+    Parameters
+    ----------
+    filename: str
+        Name of the output file.
 
-    Returns:
-        Path: Absolute Path object pointing to the output file.
+    Returns
+    -------
+    output_path: Path
+        Absolute Path object pointing to the output file.
     """
     output_path = DATA_DIR/ "outputs" / filename
     output_path.parent.mkdir(parents=True, exist_ok=True)
