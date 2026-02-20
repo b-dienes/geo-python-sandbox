@@ -101,8 +101,10 @@ Transition to DAG-style orchestration with Airflow, enabling:
 - Future vector-raster overlay tasks for integrated spatial analysis
 
 ### Conceptual DAG:
+```text
 Vector Processing 
        └─> Tile Generation 
                └─> Download NAIP Imagery (per tile, parallel)
                        └─> Raster Processing / NDVI (per tile, parallel)
                                └─> Vector-Raster Overlay (future)
+```
