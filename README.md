@@ -1,7 +1,7 @@
 # Geo Python Sandbox
 
 A repository demonstrating geospatial Python workflows with a focus on vector and raster data processing. 
-It contains modular, reproducible code for vector analysis, satellite imagery download , and raster processing with NDVI calculation.
+It contains modular, reproducible code for vector analysis, satellite imagery download, and raster processing with NDVI calculation.
 Pipeline orchestration with Airflow/DAGs is planned as a next step.
 
 ---
@@ -43,8 +43,6 @@ geo-python-sandbox/
 ## GeoPandas: Vector Data Processing
 
 ### Workflow
-This module demonstrates professional use of GeoPandas for vector data:
-
 - Load, clean, and validate geospatial datasets
 - Reproject to a consistent equal-area CRS
 - Log descriptive statistics (total areas, counts, state-level summaries)
@@ -52,14 +50,8 @@ This module demonstrates professional use of GeoPandas for vector data:
 - Compute area differences to identify parks partially outside the state
 
 ### Results
-- Console logging provides dataset-level insights:
-  - Total national park area
-  - California parks area
-  - Percentage of total area retained within the state
-  - Park units partially clipped by the California boundary
-
-- Visualization:
-  - Choropleth map of units clipped to the state boundary, color-coded by clipped area
+- Console logs: total national park area, CA parks area, % of total area retained within the state, list of partially clipped units
+- Visualization: choropleth map of units clipped to the state boundary, color-coded by area
 
 ---
 
