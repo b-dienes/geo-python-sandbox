@@ -3,6 +3,10 @@
 A repository demonstrating geospatial Python workflows with a focus on vector and raster data processing. 
 It contains modular, reproducible code for vector analysis (fully implemented) and satellite imagery download (functional), with planned raster processing exercises.
 
+A repository demonstrating geospatial Python workflows with a focus on vector and raster data processing. 
+It contains modular, reproducible code for vector analysis, satellite imagery download , and raster processing with NDVI calculation.
+Pipeline orchestration with Airflow/DAGs is planned as a next step.
+
 ---
 
 ## Technology Stack
@@ -26,9 +30,12 @@ geo-python-sandbox/
 │   └── outputs/      # Outputs from scripts (processed GeoDataFrames, exports, plots, downloaded rasters)
 ├── src/
 │   ├── geopandas_demo.py       # GeoPandas workflow: vector processing, clipping, area analysis
-│   ├── requests_demo.py        # Raster workflow: NAIP imagery download and storage
-│   ├── main.py                 # Pipeline linking vector and raster processing
+│   ├── requests_demo.py        # Satellite imagery download
+│   ├── rasterio_demo.py        # Raster workflow: saving NAIP images, loading, NDVI calculation, exporting rasters
+│   ├── main.py                 # Pipeline orchestration linking vector and raster processing
 │   └── utils/
+│       ├── geometry.py         # Tiling based on park polygons and user input
+│       ├── inputs.py           # User input handling
 │       └── paths.py            # Helper functions for resolving file paths
 ├── README.md
 └── .gitignore
