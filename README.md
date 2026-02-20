@@ -1,9 +1,6 @@
 # Geo Python Sandbox
 
 A repository demonstrating geospatial Python workflows with a focus on vector and raster data processing. 
-It contains modular, reproducible code for vector analysis (fully implemented) and satellite imagery download (functional), with planned raster processing exercises.
-
-A repository demonstrating geospatial Python workflows with a focus on vector and raster data processing. 
 It contains modular, reproducible code for vector analysis, satellite imagery download , and raster processing with NDVI calculation.
 Pipeline orchestration with Airflow/DAGs is planned as a next step.
 
@@ -69,38 +66,43 @@ This module demonstrates professional use of GeoPandas for vector data:
 ## Requests: NAIP Imagery Download
 
 ### Workflow
-- Prepare bounding boxes for clipped park polygons (reprojected to Web Mercator)
-- Fetch NAIP aerial imagery via USGS ArcGIS REST API for a given park polygon
-- Save imagery as GeoTIFF files to outputs directory
+- Prepare bounding boxes / tiles for clipped park polygons based on user input (reprojected to Web Mercator)
+- Fetch NAIP aerial imagery via USGS ArcGIS REST API for each tile
 
 ### Results
-- Downloaded NAIP imagery for sample parks
-- Saved GeoTIFFs can be used for future raster/vector integration
-- CRS and AOI checks ensure correct alignment with vector datasets
+- Downloaded NAIP imagery for sample parks, split into tiles according to user-defined parameters
 
 ---
 
-## Rasterio: Raster Data Processing (upcoming)
+## Rasterio: Raster Data Processing
 
 ### Workflow
-- Placeholder for future exercises with raster datasets
-- Demonstrate reading, writing, and analyzing raster data
-- Integrate raster/vector workflows for spatial analysis
-- Showcase coordinate system transformations and resampling
+- Save downloaded NAIP imagery as GeoTIFF files to outputs directory
+- Open satellite imagery, calculate NDVI, and save NDVI rasters
+- Placeholder for future exercises: clipping NDVI rasters to park polygons, raster/vector overlays
 
 ### Results
-- Placeholder for raster analysis visualizations
+- Saved GeoTIFFs and NDVI rasters are ready for integration with vector workflows
 - Planned outputs:
-  - Raster plots
-  - Raster/vector overlays
-  - Summarized raster statistics
+  - Raster/vector overlays and visualizations
 
 ---
 
-## Roadmap
+## Airflow: Orchestrating Vector and Raster Workflows
 
-Planned enhancements to the repository:
+### Workflow
+- Coordinate end-to-end geospatial processing
+- Currently implemented as a sequential Python script (main.py)
 
-- Add raster analysis workflows with Rasterio
-- Generate visualizations for vector and raster data
-- Integrate vector/raster workflows for end-to-end spatial analysis
+### Planned enhancement:
+Transition to DAG-style orchestration with Airflow, enabling:
+- Parallel download of NAIP imagery per tile
+- Independent raster processing tasks per tile
+- Future vector-raster overlay tasks for integrated spatial analysis
+
+### Conceptual DAG:
+Vector Processing 
+       └─> Tile Generation 
+               └─> Download NAIP Imagery (per tile, parallel)
+                       └─> Raster Processing / NDVI (per tile, parallel)
+                               └─> Vector-Raster Overlay (future)
